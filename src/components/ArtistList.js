@@ -37,7 +37,7 @@ const PopupModal = () => {
             </div>
             <div className="p-6">
               <h2 className="text-2xl font-semibold mb-4">Welcome to the Spotify A&R Tool</h2>
-              <p className="text-gray-600 mb-6">We're tracking hundreds of popular editorial/independent playlists, and then monitoring the artists gaining the most followers from these playlists.  </p>
+              <p className="text-gray-600 mb-6">We're tracking hundreds of the most popular editorial/independent playlists, and then monitoring the artists gaining the most followers from these playlists.  </p>
               <button
                 className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 focus:outline-none"
                 onClick={closeModal}
