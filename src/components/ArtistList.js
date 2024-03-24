@@ -4,6 +4,8 @@ import { TypeAnimation } from 'react-type-animation';
 import Slider from 'rc-slider';
 import 'rc-slider/assets/index.css';
 import Masonry, {ResponsiveMasonry} from "react-responsive-masonry"
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faInstagram } from '@fortawesome/free-brands-svg-icons';
 
 const PopupModal = () => {
   const [isOpen, setIsOpen] = useState(true);
