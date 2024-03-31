@@ -94,6 +94,7 @@ function ArtistList() {
 
   const [artists, setArtists] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [scanActive, setScanActive] = useState(false);
   const [sortBy, setSortBy] = useState('playlist_count'); // Default sorting by popularity
   const [sortOrder, setSortOrder] = useState('desc'); // Default sorting order
   const [sortFollowerGrowth, setSortFollowerGrowth] = useState('desc'); // Default sorting order for follower growth
@@ -187,6 +188,22 @@ function ArtistList() {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await fetch('https://server-wsrz.onrender.com/scanstatus');
+        const data = await response[0].json();
+        setScanActive(data["active_scan"]);
+      } catch (error) {
+        console.error('Error:', error);
+      } finally {
+        console.log("test");
+      }
+    };
+
+    fetchData();
+  }, []);
+
   const [loadingArtist, setLoadingArtist] = useState(null);
   const [generatedBio, setGeneratedBio] = useState({});
 
@@ -207,9 +224,9 @@ function ArtistList() {
       .finally(() => {
         setLoadingArtist(null);
       });
-  };
-
-  if (loading) {
+  }
+    
+  if (loading || scanActive) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
         <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent mb-4" role="status">
@@ -217,9 +234,12 @@ function ArtistList() {
             Loading...
           </span>
         </div>
-        <h6 className="text-xl font-bold">Booting up your artist dashboard. This may take a minute...</h6>
+        <h6 className="text-xl font-bold">
+          {scanActive
+            ? 'Scanning the internet for new artist data...'
+            : 'Booting up your artist dashboard. This may take a minute...'}
+        </h6>
       </div>
-
     );
   }
 
