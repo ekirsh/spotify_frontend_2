@@ -182,7 +182,7 @@ function ArtistList() {
         const scan_data = await scan_status.json()
         console.error(scan_data);
         setArtists(data);
-        setScanActive(scan_data["active_scan"]);
+        setScanActive(scan_data[0]["active_scan"]);
       } catch (error) {
         console.error('Error:', error);
       } finally {
@@ -219,14 +219,17 @@ function ArtistList() {
   if (loading || scanActive) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
-        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent mb-4" role="status">
-          <span className="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">
-            Loading...
-          </span>
-        </div>
+        {/* Render spinner only when loading is true and scanActive is false */}
+        {loading && !scanActive && (
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent mb-4" role="status">
+            <span className="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">
+              Loading...
+            </span>
+          </div>
+        )}
         <h6 className="text-xl font-bold">
           {scanActive
-            ? 'Scanning the internet for new artist data...'
+            ? 'Scanning the internet for new artist data. Please come back later...'
             : 'Booting up your artist dashboard. This may take a minute...'}
         </h6>
       </div>
