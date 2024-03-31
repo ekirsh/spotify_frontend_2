@@ -189,10 +189,12 @@ function ArtistList() {
   }, []);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchScanData = async () => {
       try {
         const response = await fetch('https://server-wsrz.onrender.com/scanstatus');
-        const data = await response[0].json();
+        console.log(response)
+        const data = await response.json();
+        console.log(data)
         setScanActive(data["active_scan"]);
       } catch (error) {
         console.error('Error:', error);
@@ -201,7 +203,7 @@ function ArtistList() {
       }
     };
 
-    fetchData();
+    fetchScanData();
   }, []);
 
   const [loadingArtist, setLoadingArtist] = useState(null);
