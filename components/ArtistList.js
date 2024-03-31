@@ -177,10 +177,12 @@ function ArtistList() {
       try {
         const response = await fetch('https://server-wsrz.onrender.com/artists');
         const scan_status = await fetch('https://server-wsrz.onrender.com/scanstatus');
-        console.log(scan_status);
+        console.error(scan_status);
         const data = await response.json();
+        const scan_data = await scan_status.json()
+        console.error(scan_data);
         setArtists(data);
-        setScanActive(scan_status[0]["active_scan"]);
+        setScanActive(scan_data["active_scan"]);
       } catch (error) {
         console.error('Error:', error);
       } finally {
