@@ -4,6 +4,8 @@ import { TypeAnimation } from 'react-type-animation';
 import Slider from 'rc-slider';
 import 'rc-slider/assets/index.css';
 import Masonry, {ResponsiveMasonry} from "react-responsive-masonry"
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faInstagram } from '@fortawesome/free-brands-svg-icons';
 
 const PopupModal = () => {
   const [isOpen, setIsOpen] = useState(true);
@@ -94,7 +96,6 @@ function ArtistList() {
 
   const [artists, setArtists] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [scanActive, setScanActive] = useState(false);
   const [sortBy, setSortBy] = useState('playlist_count'); // Default sorting by popularity
   const [sortOrder, setSortOrder] = useState('desc'); // Default sorting order
   const [sortFollowerGrowth, setSortFollowerGrowth] = useState('desc'); // Default sorting order for follower growth
@@ -102,6 +103,7 @@ function ArtistList() {
   const [maxFollowers, setMaxFollowers] = useState(50000);
   const [minPlaylistCount, setMinPlaylistCount] = useState(0);
   const [maxPlaylistCount, setMaxPlaylistCount] = useState(25);
+  const [scanActive, setScanActive] = useState(false);
 
 
   const sortArtists = (artists) => {
@@ -193,7 +195,6 @@ function ArtistList() {
     fetchData();
   }, []);
 
-
   const [loadingArtist, setLoadingArtist] = useState(null);
   const [generatedBio, setGeneratedBio] = useState({});
 
@@ -214,8 +215,8 @@ function ArtistList() {
       .finally(() => {
         setLoadingArtist(null);
       });
-  }
-    
+  };
+
   if (loading || scanActive) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
@@ -235,6 +236,7 @@ function ArtistList() {
       </div>
     );
   }
+
 
   return (
 
@@ -345,13 +347,20 @@ function ArtistList() {
           <img className="rounded-t-lg" src={artist.image} alt={artist.name} />
           </a>
       <div className="p-5">
-          <a href={artist.url} target="_blank">
-        <h5 className="text-xl font-semibold tracking-tight text-gray-900 dark:text-white">{artist.name}</h5>
-        </a>
-        <div className="mb-5">
-        <h5 className="text-xs font-semibold text-gray-600 dark:text-gray-400">{artist.genres.join(', ')}</h5>
-        <h5 className="text-xs text-gray-500 mt-1 dark:text-gray-400">{artist.label}</h5>
-      </div>
+      <div className="flex items-center">
+    <a href={artist.url} target="_blank" className="flex-grow">
+      <h5 className="text-xl font-semibold tracking-tight text-gray-900 dark:text-white">{artist.name}</h5>
+    </a>
+    {artist.instagram && (
+      <a href={artist.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="ml-2">
+        <FontAwesomeIcon icon={faInstagram} size="lg" />
+      </a>
+    )}
+  </div>
+  <div className="mb-5">
+    <h5 className="text-xs font-semibold text-gray-600 dark:text-gray-400">{artist.genres.join(', ')}</h5>
+    <h5 className="text-xs text-gray-500 mt-1 dark:text-gray-400">{artist.label}</h5>
+  </div>
       <div className="flex items-center mt-2.5">
           <span className="bg-green-100 text-green-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded dark:bg-green-200 dark:text-blue-800">Monthly Listeners: {artist.monthly_listeners.toLocaleString()}</span>
         </div>
