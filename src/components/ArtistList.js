@@ -39,7 +39,7 @@ const PopupModal = () => {
             </div>
             <div className="p-6">
               <h2 className="text-2xl font-semibold mb-4">Welcome to the Spotify A&R Tool</h2>
-              <p className="text-gray-600 mb-6">We're tracking hundreds of the most popular editorial/independent playlists, and then monitoring the artists gaining the most followers from these playlists.  </p>
+              <p className="text-gray-600 mb-6">We're tracking hundreds of popular editorial/independent playlists, and then monitoring the artists gaining the most followers from these playlists.  </p>
               <button
                 className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 focus:outline-none"
                 onClick={closeModal}
@@ -103,6 +103,7 @@ function ArtistList() {
   const [maxFollowers, setMaxFollowers] = useState(50000);
   const [minPlaylistCount, setMinPlaylistCount] = useState(0);
   const [maxPlaylistCount, setMaxPlaylistCount] = useState(25);
+  const [scanActive, setScanActive] = useState(false);
 
 
   const sortArtists = (artists) => {
@@ -177,8 +178,13 @@ function ArtistList() {
     const fetchData = async () => {
       try {
         const response = await fetch('https://server-wsrz.onrender.com/artists');
+        const scan_status = await fetch('https://server-wsrz.onrender.com/scanstatus');
+        console.error(scan_status);
         const data = await response.json();
+        const scan_data = await scan_status.json()
+        console.error(scan_data);
         setArtists(data);
+        setScanActive(scan_data[0]["active_scan"]);
       } catch (error) {
         console.error('Error:', error);
       } finally {
@@ -211,19 +217,26 @@ function ArtistList() {
       });
   };
 
-  if (loading) {
+  if (loading || scanActive) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
-        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent mb-4" role="status">
-          <span className="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">
-            Loading...
-          </span>
-        </div>
-        <h6 className="text-xl font-bold">Booting up your artist dashboard. This may take a minute...</h6>
+        {/* Render spinner only when loading is true and scanActive is false */}
+        {loading && !scanActive && (
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent mb-4" role="status">
+            <span className="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">
+              Loading...
+            </span>
+          </div>
+        )}
+        <h6 className="text-xl font-bold">
+          {scanActive
+            ? 'Scanning the internet for new artist data. Please come back later...'
+            : 'Booting up your artist dashboard. This may take a minute...'}
+        </h6>
       </div>
-
     );
   }
+
 
   return (
 
@@ -334,20 +347,20 @@ function ArtistList() {
           <img className="rounded-t-lg" src={artist.image} alt={artist.name} />
           </a>
       <div className="p-5">
-         <div className="flex items-center">
-          <a href={artist.url} target="_blank" className="flex-grow">
-            <h5 className="text-xl font-semibold tracking-tight text-gray-900 dark:text-white">{artist.name}</h5>
-          </a>
-          {artist.instagram && (
-            <a href={artist.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="ml-2">
-              <FontAwesomeIcon icon={faInstagram} size="lg" />
-            </a>
-          )}
-        </div>
-        <div className="mb-5">
-          <h5 className="text-xs font-semibold text-gray-600 dark:text-gray-400">{artist.genres.join(', ')}</h5>
-          <h5 className="text-xs text-gray-500 mt-1 dark:text-gray-400">{artist.label}</h5>
-        </div>
+      <div className="flex items-center">
+    <a href={artist.url} target="_blank" className="flex-grow">
+      <h5 className="text-xl font-semibold tracking-tight text-gray-900 dark:text-white">{artist.name}</h5>
+    </a>
+    {artist.instagram && (
+      <a href={artist.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="ml-2">
+        <FontAwesomeIcon icon={faInstagram} size="lg" />
+      </a>
+    )}
+  </div>
+  <div className="mb-5">
+    <h5 className="text-xs font-semibold text-gray-600 dark:text-gray-400">{artist.genres.join(', ')}</h5>
+    <h5 className="text-xs text-gray-500 mt-1 dark:text-gray-400">{artist.label}</h5>
+  </div>
       <div className="flex items-center mt-2.5">
           <span className="bg-green-100 text-green-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded dark:bg-green-200 dark:text-blue-800">Monthly Listeners: {artist.monthly_listeners.toLocaleString()}</span>
         </div>
