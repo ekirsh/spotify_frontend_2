@@ -176,8 +176,11 @@ function ArtistList() {
     const fetchData = async () => {
       try {
         const response = await fetch('https://server-wsrz.onrender.com/artists');
+        const scan_status = await fetch('https://server-wsrz.onrender.com/scanstatus');
+        console.log(scan_status);
         const data = await response.json();
         setArtists(data);
+        setScanActive(scan_status[0]["active_scan"]);
       } catch (error) {
         console.error('Error:', error);
       } finally {
@@ -188,23 +191,6 @@ function ArtistList() {
     fetchData();
   }, []);
 
-  useEffect(() => {
-    const fetchScanData = async () => {
-      try {
-        const response = await fetch('https://server-wsrz.onrender.com/scanstatus');
-        console.log(response)
-        const data = await response.json();
-        console.log(data)
-        setScanActive(data["active_scan"]);
-      } catch (error) {
-        console.error('Error:', error);
-      } finally {
-        console.log("test");
-      }
-    };
-
-    fetchScanData();
-  }, []);
 
   const [loadingArtist, setLoadingArtist] = useState(null);
   const [generatedBio, setGeneratedBio] = useState({});
