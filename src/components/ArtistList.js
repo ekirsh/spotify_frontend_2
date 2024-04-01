@@ -358,7 +358,11 @@ function ArtistList() {
     )}
   </div>
   <div className="mb-5">
-    <h5 className="text-xs font-semibold text-gray-600 dark:text-gray-400">{artist.genres.join(', ')}</h5>
+    {artist.genres && artist.genres.length > 0 &&
+    <h5 className="text-xs font-semibold text-gray-600 dark:text-gray-400">
+      {artist.genres.join(', ')}
+    </h5>
+    }
     <h5 className="text-xs text-gray-500 mt-1 dark:text-gray-400">{artist.label}</h5>
   </div>
       <div className="flex items-center mt-2.5">
