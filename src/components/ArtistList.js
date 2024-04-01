@@ -66,20 +66,27 @@ const FollowersAnalytics = ({ data }) => {
       return 0;
     }
 
-    let totalPercentageChange = 0;
+    // Extract the timestamps from the first and last data points
+    const firstTimestamp = new Date(data[0].timestamp);
+    const lastTimestamp = new Date(data[data.length - 1].timestamp);
 
-    for (let i = 1; i < data.length; i++) {
-      const currentFollowers = data[i].followers;
-      const previousFollowers = data[i - 1].followers;
+    // Calculate the difference in milliseconds between the first and last timestamps
+    const timeDifferenceInMs = lastTimestamp.getTime() - firstTimestamp.getTime();
 
-      const followersChange = currentFollowers - previousFollowers;
-      const percentageChange = (followersChange / previousFollowers) * 100;
+    // Calculate the number of days between the first and last timestamps
+    const daysElapsed = Math.ceil(timeDifferenceInMs / (1000 * 60 * 60 * 24));
 
-      totalPercentageChange += percentageChange;
-    }
+    // Get followers count from the first and last day
+    const initialFollowers = data[0].followers;
+    const finalFollowers = data[data.length - 1].followers;
+
+    // Calculate followers change and percentage change
+    const followersChange = finalFollowers - initialFollowers;
+    const percentageChange = (followersChange / initialFollowers) * 100;
 
     // Calculate average percentage change
-    const averagePercentageChange = totalPercentageChange / (data.length - 1);
+    const averagePercentageChange = percentageChange / daysElapsed;
+
     return averagePercentageChange;
   };
 
@@ -89,6 +96,7 @@ const FollowersAnalytics = ({ data }) => {
     </div>
   );
 };
+
 
 
 
@@ -104,7 +112,17 @@ function ArtistList() {
   const [minPlaylistCount, setMinPlaylistCount] = useState(0);
   const [maxPlaylistCount, setMaxPlaylistCount] = useState(25);
   const [scanActive, setScanActive] = useState(false);
+  const [genres, setGenres] = useState([]);
+  const [selectedGenres, setSelectedGenres] = useState([]);
+  const [showGenreFilter, setShowGenreFilter] = useState(false);
+  const [selectedLabel, setSelectedLabel] = useState('all');
+  const [showLabelFilter, setShowLabelFilter] = useState(false);
+  const [showFollowersFilter, setShowFollowersFilter] = useState(false);
 
+  const handleLabelChange = (label) => {
+    setSelectedLabel(label);
+    setShowLabelFilter(false);
+  };
 
   const sortArtists = (artists) => {
     return artists.sort((a, b) => {
@@ -137,20 +155,27 @@ function ArtistList() {
       return 0;
     }
 
-    let totalPercentageChange = 0;
+    // Extract the timestamps from the first and last data points
+    const firstTimestamp = new Date(datab[0].timestamp);
+    const lastTimestamp = new Date(datab[datab.length - 1].timestamp);
 
-    for (let i = 1; i < datab.length; i++) {
-      const currentFollowers = datab[i].followers;
-      const previousFollowers = datab[i - 1].followers;
+    // Calculate the difference in milliseconds between the first and last timestamps
+    const timeDifferenceInMs = lastTimestamp.getTime() - firstTimestamp.getTime();
 
-      const followersChange = currentFollowers - previousFollowers;
-      const percentageChange = (followersChange / previousFollowers) * 100;
+    // Calculate the number of days between the first and last timestamps
+    const daysElapsed = Math.ceil(timeDifferenceInMs / (1000 * 60 * 60 * 24));
 
-      totalPercentageChange += percentageChange;
-    }
+    // Get followers count from the first and last day
+    const initialFollowers = datab[0].followers;
+    const finalFollowers = datab[datab.length - 1].followers;
+
+    // Calculate followers change and percentage change
+    const followersChange = finalFollowers - initialFollowers;
+    const percentageChange = (followersChange / initialFollowers) * 100;
 
     // Calculate average percentage change
-    const averagePercentageChange = totalPercentageChange / (datab.length - 1);
+    const averagePercentageChange = percentageChange / daysElapsed;
+
     return averagePercentageChange;
   };
 
@@ -185,6 +210,23 @@ function ArtistList() {
         console.error(scan_data);
         setArtists(data);
         setScanActive(scan_data[0]["active_scan"]);
+
+        // Extract and count genres
+        const allGenres = data.reduce((acc, curr) => {
+          return acc.concat(curr.genres);
+        }, []);
+        
+        // Count occurrences of each genre
+        const genreCounts = allGenres.reduce((acc, genre) => {
+          acc[genre] = (acc[genre] || 0) + 1;
+          return acc;
+        }, {});
+
+        // Sort genres by occurrence count
+        const sortedGenres = Object.keys(genreCounts).sort((a, b) => genreCounts[b] - genreCounts[a]);
+
+        setGenres(sortedGenres);
+        console.log(sortedGenres);
       } catch (error) {
         console.error('Error:', error);
       } finally {
@@ -194,6 +236,28 @@ function ArtistList() {
 
     fetchData();
   }, []);
+
+  const handleGenreChange = (genre) => {
+    if (selectedGenres.includes(genre)) {
+      setSelectedGenres(selectedGenres.filter((g) => g !== genre));
+    } else {
+      setSelectedGenres([...selectedGenres, genre]);
+    }
+  };
+
+  const handleClickOutside = (event) => {
+    if (event.target.closest('.genre-filter') === null) {
+      setShowGenreFilter(false);
+    }
+  };
+
+  useEffect(() => {
+    document.addEventListener('click', handleClickOutside, true);
+    return () => {
+      document.removeEventListener('click', handleClickOutside, true);
+    };
+  }, []);
+  
 
   const [loadingArtist, setLoadingArtist] = useState(null);
   const [generatedBio, setGeneratedBio] = useState({});
@@ -245,84 +309,199 @@ function ArtistList() {
       <div className="sticky top-0 z-10 bg-white p-4 px-8 shadow-md">
   <div className="flex md:flex-row items-center justify-between">
 
-    <div className="mb-2 md:flex items-center space-x-4">
-      <label className="">Sort by:</label>
+  <div className="mb-2 md:flex items-center space-x-4">
+  <label className="text-gray-700 font-medium">Sort by:</label>
+  <div className="relative">
+    <select
+      value={sortBy}
+      onChange={(e) => setSortBy(e.target.value)}
+      className="bg-gray-200 hover:bg-blue-500 hover:text-white text-gray-800 font-semibold py-2 px-4 rounded-md pr-8 appearance-none"
+    >
+      <option value="playlist_count">Playlist Count</option>
+      <option value="follower_growth">✦ Avg Daily Follower Growth</option>
+      <option value="popularity">Popularity</option>
+      <option value="artist_followers">Followers</option>
+      <option value="total_followers">Playlist Reach</option>
+      <option value="follower_listener_ratio">Followers/Listeners</option>
+    </select>
+    <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+      <svg className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+        <path
+          fillRule="evenodd"
+          d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+          clipRule="evenodd"
+        />
+      </svg>
+    </div>
+  </div>
+  {sortBy === 'follower_growth' && (
+    <div className="relative">
       <select
-        value={sortBy}
-        onChange={(e) => setSortBy(e.target.value)}
-        className="border p-2"
+        value={sortFollowerGrowth}
+        onChange={handleFollowerGrowthSortChange}
+        className="bg-gray-200 hover:bg-blue-500 hover:text-white text-gray-800 font-semibold py-2 px-4 rounded-md pr-8 appearance-none"
       >
-        <option value="playlist_count">Playlist Count</option>
-        <option value="follower_growth">✦ Avg Daily Follower Growth</option>
-        <option value="popularity">Popularity</option>
-        <option value="artist_followers">Followers</option>
-        <option value="total_followers">Playlist Reach</option>
-        <option value="follower_listener_ratio">Followers/Listeners</option>
+        <option value="asc">Ascending</option>
+        <option value="desc">Descending</option>
       </select>
+      <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+        <svg className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+          <path
+            fillRule="evenodd"
+            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+            clipRule="evenodd"
+          />
+        </svg>
+      </div>
+    </div>
+  )}
+  {sortBy !== 'follower_growth' && (
+    <div className="relative">
+      <select
+        value={sortOrder}
+        onChange={(e) => setSortOrder(e.target.value)}
+        className="bg-gray-200 hover:bg-blue-500 hover:text-white text-gray-800 font-semibold py-2 px-4 rounded-md pr-8 appearance-none"
+      >
+        <option value="asc">Ascending</option>
+        <option value="desc">Descending</option>
+      </select>
+      <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+        <svg className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+          <path
+            fillRule="evenodd"
+            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+            clipRule="evenodd"
+          />
+        </svg>
+      </div>
+    </div>
+  )}
 
-      {sortBy === 'follower_growth' && (
-        <select
-          value={sortFollowerGrowth}
-          onChange={handleFollowerGrowthSortChange}
-          className="border p-2"
-        >
-          <option value="asc">Ascending</option>
-          <option value="desc">Descending</option>
-        </select>
-      )}
 
-      {sortBy !== 'follower_growth' && (
-        <select
-          value={sortOrder}
-          onChange={(e) => setSortOrder(e.target.value)}
-          className="border p-2"
-        >
-          <option value="asc">Ascending</option>
-          <option value="desc">Descending</option>
-        </select>
-      )}
+      <div className="relative genre-filter">
+              <button
+                className="bg-gray-200 hover:bg-blue-500 hover:text-white text-gray-800 font-semibold py-2 px-4 rounded"
+                onClick={() => setShowGenreFilter(!showGenreFilter)}
+              >
+                Filter by Genres{' '}
+                {selectedGenres.length > 0 && (
+                  <span className="text-xs text-gray-600">({selectedGenres.length})</span>
+                )}
+              </button>
+              {showGenreFilter && (
+                <div className="absolute z-10 bg-white border rounded-md shadow-lg mt-2 w-64 max-h-64 overflow-y-auto">
+                  <div className="p-4">
+                    {genres.map((genre) => (
+                      <button
+                        key={genre}
+                        onClick={() => handleGenreChange(genre)}
+                        className={`mr-2 mb-2 px-3 py-1 rounded-full text-sm font-semibold focus:outline-none ${
+                          selectedGenres.includes(genre)
+                            ? 'bg-blue-500 text-white'
+                            : 'bg-gray-200 text-gray-800 hover:bg-blue-500 hover:text-white'
+                        }`}
+                      >
+                        {genre} ({artists.filter((artist) => artist.genres.includes(genre)).length})
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+
+            <div className="relative">
+              <button
+                className="bg-gray-200 hover:bg-blue-500 hover:text-white text-gray-800 font-semibold py-2 px-4 rounded"
+                onClick={() => setShowLabelFilter(!showLabelFilter)}
+              >
+                Filter by Label{' '}
+                {selectedLabel !== 'all' && (
+                  <span className="text-xs text-gray-600">({selectedLabel})</span>
+                )}
+              </button>
+              {showLabelFilter && (
+                <div className="absolute z-10 bg-white border rounded-md shadow-lg mt-2 w-64 max-h-64 overflow-y-auto">
+                  <div className="p-4">
+                    <button
+                      onClick={() => handleLabelChange('all')}
+                      className={`mb-2 ml-1 px-3 py-1 rounded-full text-sm font-semibold focus:outline-none ${
+                        selectedLabel === 'all'
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-gray-200 text-gray-800 hover:bg-blue-500 hover:text-white'
+                      }`}
+                    >
+                      All
+                    </button>
+                    <button
+                      onClick={() => handleLabelChange('Unsigned')}
+                      className={`mb-2 ml-1 px-3 py-1 rounded-full text-sm font-semibold focus:outline-none ${
+                        selectedLabel === 'Unsigned'
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-gray-200 text-gray-800 hover:bg-blue-500 hover:text-white'
+                      }`}
+                    >
+                      Unsigned
+                    </button>
+                    <button
+                      onClick={() => handleLabelChange('Signed')}
+                      className={`mb-2 ml-1 px-3 py-1 rounded-full text-sm font-semibold focus:outline-none ${
+                        selectedLabel === 'Signed'
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-gray-200 text-gray-800 hover:bg-blue-500 hover:text-white'
+                      }`}
+                    >
+                      Signed
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+
+            <div className="relative">
+              <button
+                className="bg-gray-200 hover:bg-blue-500 hover:text-white text-gray-800 font-semibold py-2 px-4 rounded"
+                onClick={() => setShowFollowersFilter(!showFollowersFilter)}
+              >
+                Filter by Followers
+              </button>
+              {showFollowersFilter && (
+                <div className="absolute z-10 bg-white border rounded-md shadow-lg mt-2 w-64 max-h-64 overflow-y-auto">
+                  <div className="ml-4 mt-4 md:mt-0">
+                    <div className="mt-2 mb-4">
+                      <label className="text-sm">Followers Range:</label>
+                      <div className="flex items-center space-x-4">
+                        <span className="text-xs">Min: {minFollowers}</span>
+                        <Slider
+                          min={0}
+                          max={350000}
+                          value={[minFollowers, maxFollowers]}
+                          onChange={(values) => {
+                            setMinFollowers(values[0]);
+                            setMaxFollowers(values[1]);
+                          }}
+                          range
+                          style={{ width: '150px' }}
+                        />
+                        <span className="text-xs">Max: {maxFollowers}</span>
+                      </div>
+                    </div>
+
+                  </div>
+
+                </div>
+              )}
+            </div>
+
 
     </div>
 
-    <div className=" mt-4 md:mt-0">
-      <div className="mb-4">
-        <label className="text-sm">Followers Range:</label>
-        <div className="flex items-center space-x-4">
-          <span className="text-xs">Min: {minFollowers}</span>
-          <Slider
-            min={0}
-            max={350000}
-            value={[minFollowers, maxFollowers]}
-            onChange={(values) => {
-              setMinFollowers(values[0]);
-              setMaxFollowers(values[1]);
-            }}
-            range
-            style={{ width: '150px' }}
-          />
-          <span className="text-xs">Max: {maxFollowers}</span>
-        </div>
-      </div>
 
-      <div>
-        <label className="text-sm">Playlist Count Range:</label>
-        <div className="flex items-center space-x-4">
-          <span className="text-xs">Min: {minPlaylistCount}</span>
-          <Slider
-            min={0}
-            max={25}
-            value={[minPlaylistCount, maxPlaylistCount]}
-            onChange={(values) => {
-              setMinPlaylistCount(values[0]);
-              setMaxPlaylistCount(values[1]);
-            }}
-            range
-            style={{ width: '150px' }}
-          />
-          <span className="text-xs">Max: {maxPlaylistCount}</span>
-        </div>
-      </div>
-    </div>
+
+    
+
+    
 
   </div>
 </div>
@@ -338,7 +517,12 @@ function ArtistList() {
           artist.playlist_count >= minPlaylistCount &&
           artist.playlist_count <= maxPlaylistCount &&
           artist.artist_followers >= minFollowers &&
-          artist.artist_followers <= maxFollowers 
+          artist.artist_followers <= maxFollowers &&
+          selectedGenres.every((genre) => artist.genres.includes(genre)) &&
+          (selectedLabel === 'all' ||
+                  (selectedLabel === 'Unsigned' &&
+                    ['DistroKid', 'CDBaby', 'TuneCore', 'Self-released',''].includes(artist.label)) ||
+                  (selectedLabel === 'Signed' && !['DistroKid', 'CDBaby', 'TuneCore', 'Self-released', ''].includes(artist.label)))
       )).map(artist => (
       <div
           className="block max-w-xs bg-white rounded-lg border border-gray-200 shadow-md dark:bg-gray-800 dark:border-gray-700 m-4 hover:shadow-lg transition-shadow duration-300 ease-in-out"
