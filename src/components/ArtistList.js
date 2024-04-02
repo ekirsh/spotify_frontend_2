@@ -6,6 +6,14 @@ import 'rc-slider/assets/index.css';
 import Masonry, {ResponsiveMasonry} from "react-responsive-masonry"
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faInstagram } from '@fortawesome/free-brands-svg-icons';
+import { faSpotify } from '@fortawesome/free-brands-svg-icons';
+import { faChartLine } from '@fortawesome/free-solid-svg-icons';
+import { Line } from 'react-chartjs-2';
+import Chart from 'chart.js/auto';
+import moment from 'moment';
+import { Card, CategoryBar } from '@tremor/react';
+import { Metric, Text } from '@tremor/react';
+
 
 const PopupModal = () => {
   const [isOpen, setIsOpen] = useState(true);
@@ -59,43 +67,82 @@ const PopupModal = () => {
 
 
 
-const FollowersAnalytics = ({ data }) => {
+const FollowersAnalytics = ({ data, artistName }) => {
   const calculateAveragePercentageChange = () => {
     if (data.length <= 1) {
-      // Handle the case where there's not enough data for comparison
       return 0;
     }
 
-    // Extract the timestamps from the first and last data points
     const firstTimestamp = new Date(data[0].timestamp);
     const lastTimestamp = new Date(data[data.length - 1].timestamp);
 
-    // Calculate the difference in milliseconds between the first and last timestamps
     const timeDifferenceInMs = lastTimestamp.getTime() - firstTimestamp.getTime();
-
-    // Calculate the number of days between the first and last timestamps
     const daysElapsed = Math.ceil(timeDifferenceInMs / (1000 * 60 * 60 * 24));
 
-    // Get followers count from the first and last day
     const initialFollowers = data[0].followers;
     const finalFollowers = data[data.length - 1].followers;
 
-    // Calculate followers change and percentage change
     const followersChange = finalFollowers - initialFollowers;
     const percentageChange = (followersChange / initialFollowers) * 100;
 
-    // Calculate average percentage change
     const averagePercentageChange = percentageChange / daysElapsed;
-
     return averagePercentageChange;
   };
 
+  const [showChart, setShowChart] = useState(false);
+
+  const toggleChart = () => {
+    setShowChart(!showChart);
+  };
+
+  const chartData = {
+    labels: data.map(d => moment(d.timestamp).format('YYYY-MM-DD')),
+    datasets: [
+      {
+        label: 'Followers',
+        data: data.map(d => d.followers),
+        fill: false,
+        backgroundColor: 'rgb(59, 130, 246)',
+        borderColor: 'rgba(59, 130, 246, 0.2)',
+      },
+    ],
+  };
+
   return (
-    <div className="flex items-center mb-2.5 mt-2.5">
-        <span className="bg-blue-100 text-blue-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded dark:bg-blue-200 dark:text-blue-800">✦ Avg Daily Follower Growth: {calculateAveragePercentageChange().toFixed(2)}%</span>
+    <div className="">
+      <button
+        onClick={toggleChart}
+        className=""
+      >
+      <Card className="mx-auto max-w-xs p-2">
+                    <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content text-sm"><FontAwesomeIcon icon={faSpotify} size="sm" /> Avg Daily Follower Growth</p>
+                    <p className="text-lg text-tremor-content-strong dark:text-dark-tremor-content-strong font-semibold">{calculateAveragePercentageChange().toFixed(2)}%</p>
+                    <p className="text-xs text-gray-400"><FontAwesomeIcon icon={faChartLine} size="xs" className="mr-2" />Click to view chart</p>
+                </Card>
+      
+      </button>
+      {showChart && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-gray-800 bg-opacity-50">
+          <div className="bg-white rounded-lg max-w-md overflow-hidden">
+            <div className="flex justify-end px-4 pt-2 mt-2">
+              <button onClick={toggleChart} className="text-gray-500 hover:text-gray-800 focus:outline-none">
+                <svg className="h-6 w-6" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
+                  <path d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
+            <div className="p-6">
+              <h2 className="text-2xl font-semibold mb-4"><FontAwesomeIcon icon={faSpotify} size="lg" /> Follower Growth Chart</h2>
+              <h3 className="text-xl font-semibold mb-4 text-gray-400">{artistName}</h3>
+              <Line data={chartData} options={{ responsive: true }} />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+
 
 
 
@@ -325,13 +372,6 @@ function ArtistList() {
       <option value="follower_listener_ratio">Followers/Listeners</option>
     </select>
     <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-      <svg className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-        <path
-          fillRule="evenodd"
-          d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-          clipRule="evenodd"
-        />
-      </svg>
     </div>
   </div>
   {sortBy === 'follower_growth' && (
@@ -345,13 +385,6 @@ function ArtistList() {
         <option value="desc">Descending</option>
       </select>
       <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-        <svg className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-          <path
-            fillRule="evenodd"
-            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-            clipRule="evenodd"
-          />
-        </svg>
       </div>
     </div>
   )}
@@ -366,13 +399,6 @@ function ArtistList() {
         <option value="desc">Descending</option>
       </select>
       <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-        <svg className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-          <path
-            fillRule="evenodd"
-            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-            clipRule="evenodd"
-          />
-        </svg>
       </div>
     </div>
   )}
@@ -464,7 +490,7 @@ function ArtistList() {
                 className="bg-gray-200 hover:bg-blue-500 hover:text-white text-gray-800 font-semibold py-2 px-4 rounded"
                 onClick={() => setShowFollowersFilter(!showFollowersFilter)}
               >
-                Filter by Followers
+                Filter by Follower Count 
               </button>
               {showFollowersFilter && (
                 <div className="absolute z-10 bg-white border rounded-md shadow-lg mt-2 w-64 max-h-64 overflow-y-auto">
@@ -549,21 +575,51 @@ function ArtistList() {
     }
     <h5 className="text-xs text-gray-500 mt-1 dark:text-gray-400">{artist.label}</h5>
   </div>
-      <div className="flex items-center mt-2.5">
-          <span className="bg-green-100 text-green-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded dark:bg-green-200 dark:text-blue-800">Monthly Listeners: {artist.monthly_listeners.toLocaleString()}</span>
-        </div>
-        <div className="flex items-center mt-2.5">
-          <span className="bg-green-100 text-green-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded dark:bg-green-200 dark:text-blue-800">Popularity: {artist.popularity}/100</span>
-          <span className="bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-0.5 rounded dark:bg-green-200 dark:text-green-900">Followers: {artist.artist_followers.toLocaleString()}</span>
-        </div>
+        <Card className="mx-auto max-w-sm mb-3">
+        <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content flex items-center justify-between">
+          <span>Popularity</span>
+          <span>{artist.popularity}%</span>
+        </p>
+      <CategoryBar
+              values={[20, 30, 20, 30]}
+              colors={['red', 'orange', 'yellow', 'green']}
+              markerValue={artist.popularity}
+              className="mt-3"
+            />
+            </Card>
+            <div className="flex items-center mt-2.5">
+                <Card className="mx-auto max-w-xs p-2">
+                    <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content text-sm"><FontAwesomeIcon icon={faSpotify} size="sm" /> Listeners</p>
+                    <p className="text-lg text-tremor-content-strong dark:text-dark-tremor-content-strong font-semibold">{artist.monthly_listeners.toLocaleString()}</p>
+                </Card>
+                <div className="mx-2"></div> {/* Add a spacer with horizontal margin */}
+                <Card className="mx-auto max-w-xs p-2">
+                    <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content text-sm"><FontAwesomeIcon icon={faSpotify} size="sm" /> Followers</p>
+                    <p className="text-lg text-tremor-content-strong dark:text-dark-tremor-content-strong font-semibold">{artist.artist_followers.toLocaleString()}</p>
+                </Card>
+            </div>
+
+            <div className="flex items-center mt-2.5">
+                <Card className="mx-auto max-w-xs p-2">
+                    <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content text-sm"><FontAwesomeIcon icon={faSpotify} size="sm" /> Playlist Count</p>
+                    <p className="text-lg text-tremor-content-strong dark:text-dark-tremor-content-strong font-semibold">{artist.playlist_count}</p>
+                </Card>
+                <div className="mx-2"></div> {/* Add a spacer with horizontal margin */}
+                <Card className="mx-auto max-w-xs p-2">
+                    <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content text-sm"><FontAwesomeIcon icon={faSpotify} size="sm" /> Playlist Reach</p>
+                    <p className="text-lg text-tremor-content-strong dark:text-dark-tremor-content-strong font-semibold">{artist.total_followers.toLocaleString()}</p>
+                </Card>
+            </div>
+
         <div className="flex items-center mb-2.5 mt-2.5">
-        <span className="bg-green-100 text-green-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded dark:bg-green-200 dark:text-blue-800">Playlists: {artist.playlist_count}</span>
-        <span className="bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-0.5 rounded dark:bg-green-200 dark:text-green-900">Playlist Reach: {artist.total_followers.toLocaleString()}</span>
+        <FollowersAnalytics data={artist.follower_history} artistName={artist.name} />
         </div>
-        <FollowersAnalytics data={artist.follower_history} />
         <div className="flex items-center mb-5 mt-2.5">
-          <span className="bg-blue-100 text-blue-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded dark:bg-blue-200 dark:text-blue-800">Followers/Listeners: {(artist.follower_listener_ratio * 100).toFixed(2)}%</span>
-        </div>
+        <Card className="mx-auto max-w-xs p-2">
+                    <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content text-sm"><FontAwesomeIcon icon={faSpotify} size="sm" /> Followers/Listeners</p>
+                    <p className="text-lg text-tremor-content-strong dark:text-dark-tremor-content-strong font-semibold">{(artist.follower_listener_ratio * 100).toFixed(2)}%</p>
+                </Card>
+                </div>
         {loadingArtist === artist.name ? (
             <div className="flex justify-center items-center mt-10">
               <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent" role="status">
