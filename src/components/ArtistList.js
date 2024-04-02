@@ -133,7 +133,7 @@ const FollowersAnalytics = ({ data, artistName }) => {
             </div>
             <div className="p-6">
               <h2 className="text-2xl font-semibold mb-4"><FontAwesomeIcon icon={faSpotify} size="lg" /> Follower Growth Chart</h2>
-              <h3 className="text-xl font-semibold mb-4 text-gray-400">{artistName}</h3>
+              <h3 className="text-xl font-semibold mb-2 text-gray-400">{artistName}</h3>
               <Line data={chartData} options={{ responsive: true }} />
             </div>
           </div>
@@ -616,7 +616,7 @@ function ArtistList() {
         </div>
         <div className="flex items-center mb-5 mt-2.5">
         <Card className="mx-auto max-w-xs p-2">
-                    <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content text-sm"><FontAwesomeIcon icon={faSpotify} size="sm" /> Followers/Listeners</p>
+                    <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content text-sm"><FontAwesomeIcon icon={faSpotify} size="sm" /> Followers/Listeners Ratio</p>
                     <p className="text-lg text-tremor-content-strong dark:text-dark-tremor-content-strong font-semibold">{(artist.follower_listener_ratio * 100).toFixed(2)}%</p>
                 </Card>
                 </div>
