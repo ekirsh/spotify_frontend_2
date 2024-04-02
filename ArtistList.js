@@ -132,7 +132,7 @@ const FollowersAnalytics = ({ data, artistName }) => {
               </button>
             </div>
             <div className="p-6">
-              <h2 className="text-2xl font-semibold mb-4"><FontAwesomeIcon icon={faSpotify} size="lg" /> Follower Growth Chart</h2>
+              <h2 className="text-2xl font-semibold mb-2"><FontAwesomeIcon icon={faSpotify} size="lg" /> Follower Growth Chart</h2>
               <h3 className="text-xl font-semibold mb-4 text-gray-400">{artistName}</h3>
               <Line data={chartData} options={{ responsive: true }} />
             </div>
