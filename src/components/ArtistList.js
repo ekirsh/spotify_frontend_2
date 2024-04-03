@@ -133,7 +133,7 @@ const FollowersAnalytics = ({ data, artistName }) => {
             </div>
             <div className="p-6">
               <h2 className="text-2xl font-semibold mb-4"><FontAwesomeIcon icon={faSpotify} size="lg" /> Follower Growth Chart</h2>
-              <h3 className="text-xl font-semibold mb-2 text-gray-400">{artistName}</h3>
+              <h3 className="text-xl font-semibold mb-4 text-gray-400">{artistName}</h3>
               <Line data={chartData} options={{ responsive: true }} />
             </div>
           </div>
@@ -170,6 +170,32 @@ function ArtistList() {
     setSelectedLabel(label);
     setShowLabelFilter(false);
   };
+
+  const handleClickOutsideLabel = (event) => {
+    if (event.target.closest('.label-filter') === null) {
+      setShowLabelFilter(false);
+    }
+  };
+  
+  useEffect(() => {
+    document.addEventListener('click', handleClickOutsideLabel, true);
+    return () => {
+      document.removeEventListener('click', handleClickOutsideLabel, true);
+    };
+  }, []);
+  
+  const handleClickOutsideFollowers = (event) => {
+    if (event.target.closest('.follower-filter') === null) {
+      setShowFollowersFilter(false);
+    }
+  };
+  
+  useEffect(() => {
+    document.addEventListener('click', handleClickOutsideFollowers, true);
+    return () => {
+      document.removeEventListener('click', handleClickOutsideFollowers, true);
+    };
+  }, []);
 
   const sortArtists = (artists) => {
     return artists.sort((a, b) => {
@@ -436,7 +462,7 @@ function ArtistList() {
             </div>
 
 
-            <div className="relative">
+            <div className="relative label-filter">
               <button
                 className="bg-gray-200 hover:bg-blue-500 hover:text-white text-gray-800 font-semibold py-2 px-4 rounded"
                 onClick={() => setShowLabelFilter(!showLabelFilter)}
@@ -485,7 +511,7 @@ function ArtistList() {
             </div>
 
 
-            <div className="relative">
+            <div className="relative follower-filter">
               <button
                 className="bg-gray-200 hover:bg-blue-500 hover:text-white text-gray-800 font-semibold py-2 px-4 rounded"
                 onClick={() => setShowFollowersFilter(!showFollowersFilter)}
@@ -547,7 +573,7 @@ function ArtistList() {
           selectedGenres.every((genre) => artist.genres.includes(genre)) &&
           (selectedLabel === 'all' ||
                   (selectedLabel === 'Unsigned' &&
-                    ['DistroKid', 'CDBaby', 'TuneCore', 'Self-released',''].includes(artist.label)) ||
+                    ['DistroKid', 'CDBaby', 'TuneCore', 'Ditto Music', 'Self-released',''].includes(artist.label)) ||
                   (selectedLabel === 'Signed' && !['DistroKid', 'CDBaby', 'TuneCore', 'Self-released', ''].includes(artist.label)))
       )).map(artist => (
       <div
@@ -616,7 +642,7 @@ function ArtistList() {
         </div>
         <div className="flex items-center mb-5 mt-2.5">
         <Card className="mx-auto max-w-xs p-2">
-                    <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content text-sm"><FontAwesomeIcon icon={faSpotify} size="sm" /> Followers/Listeners Ratio</p>
+                    <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content text-sm"><FontAwesomeIcon icon={faSpotify} size="sm" /> Followers/Listeners</p>
                     <p className="text-lg text-tremor-content-strong dark:text-dark-tremor-content-strong font-semibold">{(artist.follower_listener_ratio * 100).toFixed(2)}%</p>
                 </Card>
                 </div>
