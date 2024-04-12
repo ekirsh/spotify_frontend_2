@@ -126,7 +126,7 @@ const FollowersAnalytics = ({ data, artistName }) => {
   return (
     <div className="">
       <button onClick={toggleChart} className="">
-      <Card className="mx-auto max-w-xs p-4 rounded-lg shadow-lg bg-gradient-to-br from-blue-400 to-indigo-600">
+      <Card className="mx-auto max-w-xs p-4 rounded-lg shadow-lg">
         <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content text-sm text-center mb-4">
           <FontAwesomeIcon icon={faSpotify} size="lg" className="mr-2" /> Growth
         </p>
