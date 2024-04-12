@@ -126,46 +126,47 @@ const FollowersAnalytics = ({ data, artistName }) => {
   return (
     <div className="">
       <button onClick={toggleChart} className="">
-      <Card className="mx-auto max-w-xs p-4 rounded-lg shadow-lg">
-        <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content text-sm text-center mb-4">
-          <FontAwesomeIcon icon={faSpotify} size="lg" className="mr-2" /> Growth
+  <Card className="mx-auto max-w-xs p-2 rounded-md shadow-md">
+    <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content text-sm text-center mb-1">
+      <FontAwesomeIcon icon={faSpotify} size="sm" className="mr-1" /> Growth
+    </p>
+    <div className="grid grid-cols-1 gap-2">
+      {/* Weekly Growth */}
+      <Card className="p-1 bg-white rounded-md shadow-md">
+        <p className="text-base text-gray-800 dark:text-gray-200 font-semibold text-center">
+          Weekly Growth
         </p>
-        <div className="grid grid-cols-1 gap-4">
-          {/* Weekly Growth */}
-          <Card className="p-4 bg-white rounded-lg shadow-md">
-            <p className="text-lg text-gray-800 dark:text-gray-200 font-semibold text-center">
-              Weekly Growth
-            </p>
-            <p className="text-3xl text-blue-500 dark:text-blue-400 font-bold text-center mt-2">
-              {weeklyGrowth.toFixed(2)}%
-            </p>
-          </Card>
-          
-          {/* 30 Days Growth */}
-          <Card className="p-4 bg-white rounded-lg shadow-md">
-            <p className="text-lg text-gray-800 dark:text-gray-200 font-semibold text-center">
-              30 Days Growth
-            </p>
-            <p className="text-3xl text-blue-500 dark:text-blue-400 font-bold text-center mt-2">
-              {thirtyDaysGrowth.toFixed(2)}%
-            </p>
-          </Card>
-          
-          {/* 60 Days Growth */}
-          <Card className="p-4 bg-white rounded-lg shadow-md">
-            <p className="text-lg text-gray-800 dark:text-gray-200 font-semibold text-center">
-              60 Days Growth
-            </p>
-            <p className="text-3xl text-blue-500 dark:text-blue-400 font-bold text-center mt-2">
-              {sixtyDaysGrowth.toFixed(2)}%
-            </p>
-          </Card>
-        </div>
-        <p className="text-xs text-gray-200 dark:text-gray-400 text-center mt-4">
-          <FontAwesomeIcon icon={faChartLine} size="xs" className="mr-2" /> Click to view chart
+        <p className="text-lg text-gray-600 dark:text-gray-400 font-bold text-center mt-1">
+          {weeklyGrowth.toFixed(2)}%
         </p>
       </Card>
-    </button>
+      
+      {/* 30 Days Growth */}
+      <Card className="p-1 bg-white rounded-md shadow-md">
+        <p className="text-base text-gray-800 dark:text-gray-200 font-semibold text-center">
+          30 Days Growth
+        </p>
+        <p className="text-lg text-gray-600 dark:text-gray-400 font-bold text-center mt-1">
+          {thirtyDaysGrowth.toFixed(2)}%
+        </p>
+      </Card>
+      
+      {/* 60 Days Growth */}
+      <Card className="p-1 bg-white rounded-md shadow-md">
+        <p className="text-base text-gray-800 dark:text-gray-200 font-semibold text-center">
+          60 Days Growth
+        </p>
+        <p className="text-lg text-gray-600 dark:text-gray-400 font-bold text-center mt-1">
+          {sixtyDaysGrowth.toFixed(2)}%
+        </p>
+      </Card>
+    </div>
+    <p className="text-xs text-gray-400 dark:text-gray-600 text-center mt-1">
+      <FontAwesomeIcon icon={faChartLine} size="xs" className="mr-1" /> Click to view chart
+    </p>
+  </Card>
+</button>
+
 
 
       {showChart && (
