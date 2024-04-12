@@ -126,47 +126,22 @@ const FollowersAnalytics = ({ data, artistName }) => {
   return (
     <div className="">
       <button onClick={toggleChart} className="">
-  <Card className="mx-auto max-w-xs p-2 rounded-md shadow-md">
-    <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content text-sm text-center mb-1">
-      <FontAwesomeIcon icon={faSpotify} size="sm" className="mr-1" /> Growth
-    </p>
-    <div className="grid grid-cols-1 gap-2">
-      {/* Weekly Growth */}
-      <Card className="p-1 bg-white rounded-md shadow-md">
-        <p className="text-base text-gray-800 dark:text-gray-200 font-semibold text-center">
-          Weekly Growth
-        </p>
-        <p className="text-lg text-gray-600 dark:text-gray-400 font-bold text-center mt-1">
-          {weeklyGrowth.toFixed(2)}%
-        </p>
-      </Card>
-      
-      {/* 30 Days Growth */}
-      <Card className="p-1 bg-white rounded-md shadow-md">
-        <p className="text-base text-gray-800 dark:text-gray-200 font-semibold text-center">
-          30 Days Growth
-        </p>
-        <p className="text-lg text-gray-600 dark:text-gray-400 font-bold text-center mt-1">
-          {thirtyDaysGrowth.toFixed(2)}%
-        </p>
-      </Card>
-      
-      {/* 60 Days Growth */}
-      <Card className="p-1 bg-white rounded-md shadow-md">
-        <p className="text-base text-gray-800 dark:text-gray-200 font-semibold text-center">
-          60 Days Growth
-        </p>
-        <p className="text-lg text-gray-600 dark:text-gray-400 font-bold text-center mt-1">
-          {sixtyDaysGrowth.toFixed(2)}%
-        </p>
-      </Card>
-    </div>
-    <p className="text-xs text-gray-400 dark:text-gray-600 text-center mt-1">
-      <FontAwesomeIcon icon={faChartLine} size="xs" className="mr-1" /> Click to view chart
-    </p>
-  </Card>
-</button>
-
+        <Card className="mx-auto max-w-xs p-2">
+          <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content text-sm">
+            <FontAwesomeIcon icon={faSpotify} size="sm" /> Growth
+          </p>
+          <p className="text-lg text-tremor-content-strong dark:text-dark-tremor-content-strong font-semibold">
+            Weekly: {weeklyGrowth.toFixed(2)}%
+            <br />
+            30 Days: {thirtyDaysGrowth.toFixed(2)}%
+            <br />
+            60 Days: {sixtyDaysGrowth.toFixed(2)}%
+          </p>
+          <p className="text-xs text-gray-400">
+            <FontAwesomeIcon icon={faChartLine} size="xs" className="mr-2" />Click to view chart
+          </p>
+        </Card>
+      </button>
 
 
       {showChart && (
