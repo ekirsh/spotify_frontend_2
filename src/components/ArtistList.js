@@ -68,26 +68,41 @@ const PopupModal = () => {
 
 
 const FollowersAnalytics = ({ data, artistName }) => {
-  const calculateAveragePercentageChange = () => {
-    if (data.length <= 1) {
+  const calculatePercentageChange = (startFollowers, endFollowers) => {
+    return ((endFollowers - startFollowers) / startFollowers) * 100;
+  };
+
+  const calculateGrowth = (startIndex, endIndex) => {
+    if (startIndex < 0 || endIndex < 0 || endIndex < startIndex) {
       return 0;
     }
 
-    const firstTimestamp = new Date(data[0].timestamp);
-    const lastTimestamp = new Date(data[data.length - 1].timestamp);
+    const startFollowers = data[startIndex].followers;
+    const endFollowers = data[endIndex].followers;
 
-    const timeDifferenceInMs = lastTimestamp.getTime() - firstTimestamp.getTime();
-    const daysElapsed = Math.ceil(timeDifferenceInMs / (1000 * 60 * 60 * 24));
-
-    const initialFollowers = data[0].followers;
-    const finalFollowers = data[data.length - 1].followers;
-
-    const followersChange = finalFollowers - initialFollowers;
-    const percentageChange = (followersChange / initialFollowers) * 100;
-
-    const averagePercentageChange = percentageChange / daysElapsed;
-    return averagePercentageChange;
+    return calculatePercentageChange(startFollowers, endFollowers);
   };
+
+  const calculateGrowthOverPeriod = (periodInDays) => {
+    const today = moment();
+    const startDate = moment(today).subtract(periodInDays, 'days');
+
+    let startIndex = -1;
+    for (let i = 0; i < data.length; i++) {
+      const timestamp = moment(data[i].timestamp);
+      if (timestamp.isSameOrAfter(startDate)) {
+        startIndex = i;
+        break;
+      }
+    }
+
+    const endIndex = data.length - 1;
+    return calculateGrowth(startIndex, endIndex);
+  };
+
+  const weeklyGrowth = calculateGrowthOverPeriod(7);
+  const thirtyDaysGrowth = calculateGrowthOverPeriod(30);
+  const sixtyDaysGrowth = calculateGrowthOverPeriod(60);
 
   const [showChart, setShowChart] = useState(false);
 
@@ -110,17 +125,49 @@ const FollowersAnalytics = ({ data, artistName }) => {
 
   return (
     <div className="">
-      <button
-        onClick={toggleChart}
-        className=""
-      >
-      <Card className="mx-auto max-w-xs p-2">
-                    <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content text-sm"><FontAwesomeIcon icon={faSpotify} size="sm" /> Avg Daily Follower Growth</p>
-                    <p className="text-lg text-tremor-content-strong dark:text-dark-tremor-content-strong font-semibold">{calculateAveragePercentageChange().toFixed(2)}%</p>
-                    <p className="text-xs text-gray-400"><FontAwesomeIcon icon={faChartLine} size="xs" className="mr-2" />Click to view chart</p>
-                </Card>
-      
-      </button>
+      <button onClick={toggleChart} className="">
+      <Card className="mx-auto max-w-xs p-4 rounded-lg shadow-lg bg-gradient-to-br from-blue-400 to-indigo-600">
+        <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content text-sm text-center mb-4">
+          <FontAwesomeIcon icon={faSpotify} size="lg" className="mr-2" /> Growth
+        </p>
+        <div className="grid grid-cols-1 gap-4">
+          {/* Weekly Growth */}
+          <Card className="p-4 bg-white rounded-lg shadow-md">
+            <p className="text-lg text-gray-800 dark:text-gray-200 font-semibold text-center">
+              Weekly Growth
+            </p>
+            <p className="text-3xl text-blue-500 dark:text-blue-400 font-bold text-center mt-2">
+              {weeklyGrowth.toFixed(2)}%
+            </p>
+          </Card>
+          
+          {/* 30 Days Growth */}
+          <Card className="p-4 bg-white rounded-lg shadow-md">
+            <p className="text-lg text-gray-800 dark:text-gray-200 font-semibold text-center">
+              30 Days Growth
+            </p>
+            <p className="text-3xl text-blue-500 dark:text-blue-400 font-bold text-center mt-2">
+              {thirtyDaysGrowth.toFixed(2)}%
+            </p>
+          </Card>
+          
+          {/* 60 Days Growth */}
+          <Card className="p-4 bg-white rounded-lg shadow-md">
+            <p className="text-lg text-gray-800 dark:text-gray-200 font-semibold text-center">
+              60 Days Growth
+            </p>
+            <p className="text-3xl text-blue-500 dark:text-blue-400 font-bold text-center mt-2">
+              {sixtyDaysGrowth.toFixed(2)}%
+            </p>
+          </Card>
+        </div>
+        <p className="text-xs text-gray-200 dark:text-gray-400 text-center mt-4">
+          <FontAwesomeIcon icon={faChartLine} size="xs" className="mr-2" /> Click to view chart
+        </p>
+      </Card>
+    </button>
+
+
       {showChart && (
         <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-gray-800 bg-opacity-50">
           <div className="bg-white rounded-lg max-w-md overflow-hidden">
@@ -132,7 +179,9 @@ const FollowersAnalytics = ({ data, artistName }) => {
               </button>
             </div>
             <div className="p-6">
-              <h2 className="text-2xl font-semibold mb-4"><FontAwesomeIcon icon={faSpotify} size="lg" /> Follower Growth Chart</h2>
+              <h2 className="text-2xl font-semibold mb-4">
+                <FontAwesomeIcon icon={faSpotify} size="lg" /> Follower Growth Chart
+              </h2>
               <h3 className="text-xl font-semibold mb-4 text-gray-400">{artistName}</h3>
               <Line data={chartData} options={{ responsive: true }} />
             </div>
