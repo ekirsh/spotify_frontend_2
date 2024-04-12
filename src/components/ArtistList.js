@@ -128,7 +128,7 @@ const FollowersAnalytics = ({ data, artistName }) => {
       <button onClick={toggleChart} className="">
         <Card className="mx-auto max-w-xs p-2">
           <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content text-sm">
-            <FontAwesomeIcon icon={faSpotify} size="sm" /> Growth
+            <FontAwesomeIcon icon={faSpotify} size="sm" /> Follower Growth
           </p>
           <p className="text-lg text-tremor-content-strong dark:text-dark-tremor-content-strong font-semibold">
             Weekly: {weeklyGrowth.toFixed(2)}%
