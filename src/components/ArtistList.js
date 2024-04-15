@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import 'tailwindcss/tailwind.css';
 import { TypeAnimation } from 'react-type-animation';
 import Slider from 'rc-slider';
@@ -13,6 +13,8 @@ import Chart from 'chart.js/auto';
 import moment from 'moment';
 import { Card, CategoryBar } from '@tremor/react';
 import { Metric, Text } from '@tremor/react';
+import { faPlay, faPause, faSpinner } from '@fortawesome/free-solid-svg-icons';
+
 
 
 const PopupModal = () => {
@@ -168,7 +170,56 @@ const FollowersAnalytics = ({ data, artistName }) => {
   );
 };
 
+const PlayPauseButton = ({ previewUrl }) => {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const audioRef = React.createRef();
+  
 
+  const toggleAudio = () => {
+    if (!isPlaying) {
+      setIsLoading(true);
+      audioRef.current.src = previewUrl;
+      audioRef.current.play();
+    } else {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    }
+  };
+
+  const handleAudioLoaded = () => {
+    setIsLoading(false);
+    setIsPlaying(true);
+  };
+
+  const handleAudioEnded = () => {
+    setIsPlaying(false);
+  };
+
+  return (
+    <div className="relative">
+      <audio
+        ref={audioRef}
+        onLoadedData={handleAudioLoaded}
+        onEnded={handleAudioEnded}
+        style={{ display: 'none' }}
+      />
+      {previewUrl && (
+          <div
+          className="absolute mr-2 mt-2 top-0 right-0 flex items-center justify-center w-8 h-8 rounded-full bg-white shadow cursor-pointer"
+          onClick={toggleAudio}
+        >
+          {!isLoading && (
+            <FontAwesomeIcon icon={isPlaying ? faPause : faPlay} className="text-gray-800" />
+          )}
+          {isLoading && (
+            <FontAwesomeIcon icon={faSpinner} className="text-gray-800 animate-spin" />
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
 
 
 
@@ -190,8 +241,16 @@ function ArtistList() {
   const [selectedLabel, setSelectedLabel] = useState('all');
   const [showLabelFilter, setShowLabelFilter] = useState(false);
   const [showFollowersFilter, setShowFollowersFilter] = useState(false);
+  const [sortingLoading, setSortingLoading] = useState(false);
+
+  useEffect(() => {
+    // Sorting is done when sortBy or sortOrder changes
+    setSortingLoading(false); // Clear loading state after sorting
+  }, [sortBy, sortOrder, selectedGenres, selectedLabel]);
+
 
   const handleLabelChange = (label) => {
+    setSortingLoading(true);
     setSelectedLabel(label);
     setShowLabelFilter(false);
   };
@@ -335,7 +394,14 @@ function ArtistList() {
     fetchData();
   }, []);
 
+  const handleSortByChange = (e) => {
+    setSortingLoading(true); // Set loading state before sorting
+    setSortBy(e.target.value);
+  };
+
   const handleGenreChange = (genre) => {
+    setSortingLoading(true);
+    setShowGenreFilter(false);
     if (selectedGenres.includes(genre)) {
       setSelectedGenres(selectedGenres.filter((g) => g !== genre));
     } else {
@@ -403,18 +469,18 @@ function ArtistList() {
   return (
 
     <div className='bg-gray-100'>
-        <PopupModal />
       <div className="sticky top-0 z-10 bg-white p-4 px-8 shadow-md">
   <div className="flex md:flex-row items-center justify-between">
 
   <div className="mb-2 md:flex items-center space-x-4">
   <label className="text-gray-700 font-medium">Sort by:</label>
   <div className="relative">
-    <select
-      value={sortBy}
-      onChange={(e) => setSortBy(e.target.value)}
-      className="bg-gray-200 hover:bg-blue-500 hover:text-white text-gray-800 font-semibold py-2 px-4 rounded-md pr-8 appearance-none"
-    >
+        <select
+        value={sortBy}
+        onChange={handleSortByChange}
+        className="bg-gray-200 hover:bg-blue-500 hover:text-white text-gray-800 font-semibold py-2 px-4 rounded-md pr-8 appearance-none"
+        disabled={sortingLoading} // Disable select while sorting is in progress
+      >
       <option value="playlist_count">Playlist Count</option>
       <option value="follower_growth">✦ Avg Daily Follower Growth</option>
       <option value="popularity">Popularity</option>
@@ -582,167 +648,187 @@ function ArtistList() {
 
   </div>
 </div>
+   {sortingLoading && (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+      {/* Render spinner only when loading is true and scanActive is false */}
+        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent mb-4" role="status">
+          <span className="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">
+            Loading...
+          </span>
+        </div>
+        <h6 className="text-xl font-bold">
+          Updating the data...
+        </h6>
+    </div>
+   )}                       
 
+
+   {!sortingLoading && (
+    <ResponsiveMasonry
+    columnsCountBreakPoints={{350: 1, 750: 2, 900: 3, 1200: 4}}
+>
+<Masonry className="my-masonry">
+{sortArtists(artists.filter(
+(artist) =>
+artist.playlist_count >= minPlaylistCount &&
+artist.playlist_count <= maxPlaylistCount &&
+artist.artist_followers >= minFollowers &&
+artist.artist_followers <= maxFollowers &&
+selectedGenres.every((genre) => artist.genres.includes(genre)) &&
+(selectedLabel === 'all' ||
+      (selectedLabel === 'Unsigned' &&
+        ['DistroKid', 'CDBaby', 'TuneCore', 'Ditto Music', 'Self-released',''].includes(artist.label)) ||
+      (selectedLabel === 'Signed' && !['DistroKid', 'CDBaby', 'TuneCore', 'Self-released', ''].includes(artist.label)))
+)).map(artist => (
+<div
+className="block max-w-xs bg-white rounded-lg border border-gray-200 shadow-md dark:bg-gray-800 dark:border-gray-700 m-4 hover:shadow-lg transition-shadow duration-300 ease-in-out"
+>
+<div class="relative">
+<PlayPauseButton previewUrl={artist.preview_url} />
+<a href={artist.url} target="_blank">
+<img className="rounded-t-lg" src={artist.image} alt={artist.name} />
+</a>
+</div>
+<div className="p-5">
+<div className="flex items-center">
+<a href={artist.url} target="_blank" className="flex-grow">
+<h5 className="text-xl font-semibold tracking-tight text-gray-900 dark:text-white">{artist.name}</h5>
+</a>
+{artist.instagram && (
+<a href={artist.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="ml-2">
+<FontAwesomeIcon icon={faInstagram} size="lg" />
+</a>
+)}
+</div>
+<div className="mb-5">
+{artist.genres && artist.genres.length > 0 &&
+<h5 className="text-xs font-semibold text-gray-600 dark:text-gray-400">
+{artist.genres.join(', ')}
+</h5>
+}
+<h5 className="text-xs text-gray-500 mt-1 dark:text-gray-400">{artist.label}</h5>
+</div>
+<Card className="mx-auto max-w-sm mb-3">
+<p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content flex items-center justify-between">
+<span>Popularity</span>
+<span>{artist.popularity}%</span>
+</p>
+<CategoryBar
+  values={[20, 30, 20, 30]}
+  colors={['red', 'orange', 'yellow', 'green']}
+  markerValue={artist.popularity}
+  className="mt-3"
+/>
+</Card>
+<div className="flex items-center mt-2.5">
+    <Card className="mx-auto max-w-xs p-2">
+        <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content text-sm"><FontAwesomeIcon icon={faSpotify} size="sm" /> Listeners</p>
+        <p className="text-lg text-tremor-content-strong dark:text-dark-tremor-content-strong font-semibold">{artist.monthly_listeners.toLocaleString()}</p>
+    </Card>
+    <div className="mx-2"></div> {/* Add a spacer with horizontal margin */}
+    <Card className="mx-auto max-w-xs p-2">
+        <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content text-sm"><FontAwesomeIcon icon={faSpotify} size="sm" /> Followers</p>
+        <p className="text-lg text-tremor-content-strong dark:text-dark-tremor-content-strong font-semibold">{artist.artist_followers.toLocaleString()}</p>
+    </Card>
+</div>
+
+<div className="flex items-center mt-2.5">
+    <Card className="mx-auto max-w-xs p-2">
+        <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content text-sm"><FontAwesomeIcon icon={faSpotify} size="sm" /> Playlist Count</p>
+        <p className="text-lg text-tremor-content-strong dark:text-dark-tremor-content-strong font-semibold">{artist.playlist_count}</p>
+    </Card>
+    <div className="mx-2"></div> {/* Add a spacer with horizontal margin */}
+    <Card className="mx-auto max-w-xs p-2">
+        <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content text-sm"><FontAwesomeIcon icon={faSpotify} size="sm" /> Playlist Reach</p>
+        <p className="text-lg text-tremor-content-strong dark:text-dark-tremor-content-strong font-semibold">{artist.total_followers.toLocaleString()}</p>
+    </Card>
+</div>
+
+<div className="flex items-center mb-2.5 mt-2.5">
+<FollowersAnalytics data={artist.follower_history} artistName={artist.name} />
+</div>
+<div className="flex items-center mb-5 mt-2.5">
+<Card className="mx-auto max-w-xs p-2">
+        <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content text-sm"><FontAwesomeIcon icon={faSpotify} size="sm" /> Followers/Listeners</p>
+        <p className="text-lg text-tremor-content-strong dark:text-dark-tremor-content-strong font-semibold">{(artist.follower_listener_ratio * 100).toFixed(2)}%</p>
+    </Card>
+    </div>
+{loadingArtist === artist.name ? (
+<div className="flex justify-center items-center mt-10">
+  <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent" role="status">
+    <span className="sr-only">Loading...</span>
+  </div>
+  <TypeAnimation
+    sequence={[
+      'Scanning the internet...', 
+      2000,      
+      '',        
+      2000,
+      'Summarizing your info...', 
+      2000,      
+      '',        
+    ]}
+    wrapper="div"
+    cursor={true}
+    repeat={Infinity}
+    style={{ fontSize: '0.75em', marginLeft: '10px' }}
+  />
+</div>
+) : (
+<>
+  {artist.description ? (
+  // Display artist description if it exists
+  <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+    {artist.description}
+  </p>
+) : (
+  // Show the "Generate AI Bio" button if no description
+  <>
+    {!generatedBio[artist.name] && (
+      <button
+        onClick={() => handleArtistClick(artist.name)}
+        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded"
+      >
+        Generate AI Bio ✨ <p className="text-xs text-gray-200">Contents may be inaccurate</p>
+      </button>
+    )}
+    {generatedBio[artist.name] && (
+      <TypeAnimation
+      splitter={(str) => str.split(/(?= )/)} 
+      sequence={[
+        generatedBio[artist.name],
+        3000,
+      ]}
+      speed={{ type: 'keyStrokeDelayInMs', value: 60 }}
+      omitDeletionAnimation={true}
+      style={{ fontSize: '0.75em', display: 'block', minHeight: '200px' }}
+      repeat={0}
+    />
+    )}
+  </>
+)}
+</>
+)}
+<hr class="my-6 h-0.5 border-t-0 bg-neutral-100 opacity-100 dark:opacity-50" />
+<div className="grid grid-cols-2 gap-4">
+{artist.playlist_list.slice(0, 6).map((playlist, index) => (
+<a key={index} href={playlist.url} target="_blank" rel="noopener noreferrer" className="playlist-item">
+  <div className="flex flex-col items-center hover:opacity-80 transition duration-300">
+    <img className="w-16 h-16 object-cover rounded shadow-lg" src={playlist.image} alt={playlist.name} />
+    <span className="text-xs text-center text-gray-500 dark:text-gray-400">{playlist.name}</span>
+  </div>
+</a>
+))}
+</div>
+</div>
+</div>
+))}
+</Masonry>
+</ResponsiveMasonry>
+   )}
 
     
-<ResponsiveMasonry
-                columnsCountBreakPoints={{350: 1, 750: 2, 900: 3, 1200: 4}}
-            >
-    <Masonry className="my-masonry">
-    {sortArtists(artists.filter(
-        (artist) =>
-          artist.playlist_count >= minPlaylistCount &&
-          artist.playlist_count <= maxPlaylistCount &&
-          artist.artist_followers >= minFollowers &&
-          artist.artist_followers <= maxFollowers &&
-          selectedGenres.every((genre) => artist.genres.includes(genre)) &&
-          (selectedLabel === 'all' ||
-                  (selectedLabel === 'Unsigned' &&
-                    ['DistroKid', 'CDBaby', 'TuneCore', 'Ditto Music', 'Self-released',''].includes(artist.label)) ||
-                  (selectedLabel === 'Signed' && !['DistroKid', 'CDBaby', 'TuneCore', 'Self-released', ''].includes(artist.label)))
-      )).map(artist => (
-      <div
-          className="block max-w-xs bg-white rounded-lg border border-gray-200 shadow-md dark:bg-gray-800 dark:border-gray-700 m-4 hover:shadow-lg transition-shadow duration-300 ease-in-out"
-        >
-          <a href={artist.url} target="_blank">
-          <img className="rounded-t-lg" src={artist.image} alt={artist.name} />
-          </a>
-      <div className="p-5">
-      <div className="flex items-center">
-    <a href={artist.url} target="_blank" className="flex-grow">
-      <h5 className="text-xl font-semibold tracking-tight text-gray-900 dark:text-white">{artist.name}</h5>
-    </a>
-    {artist.instagram && (
-      <a href={artist.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="ml-2">
-        <FontAwesomeIcon icon={faInstagram} size="lg" />
-      </a>
-    )}
-  </div>
-  <div className="mb-5">
-    {artist.genres && artist.genres.length > 0 &&
-    <h5 className="text-xs font-semibold text-gray-600 dark:text-gray-400">
-      {artist.genres.join(', ')}
-    </h5>
-    }
-    <h5 className="text-xs text-gray-500 mt-1 dark:text-gray-400">{artist.label}</h5>
-  </div>
-        <Card className="mx-auto max-w-sm mb-3">
-        <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content flex items-center justify-between">
-          <span>Popularity</span>
-          <span>{artist.popularity}%</span>
-        </p>
-      <CategoryBar
-              values={[20, 30, 20, 30]}
-              colors={['red', 'orange', 'yellow', 'green']}
-              markerValue={artist.popularity}
-              className="mt-3"
-            />
-            </Card>
-            <div className="flex items-center mt-2.5">
-                <Card className="mx-auto max-w-xs p-2">
-                    <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content text-sm"><FontAwesomeIcon icon={faSpotify} size="sm" /> Listeners</p>
-                    <p className="text-lg text-tremor-content-strong dark:text-dark-tremor-content-strong font-semibold">{artist.monthly_listeners.toLocaleString()}</p>
-                </Card>
-                <div className="mx-2"></div> {/* Add a spacer with horizontal margin */}
-                <Card className="mx-auto max-w-xs p-2">
-                    <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content text-sm"><FontAwesomeIcon icon={faSpotify} size="sm" /> Followers</p>
-                    <p className="text-lg text-tremor-content-strong dark:text-dark-tremor-content-strong font-semibold">{artist.artist_followers.toLocaleString()}</p>
-                </Card>
-            </div>
 
-            <div className="flex items-center mt-2.5">
-                <Card className="mx-auto max-w-xs p-2">
-                    <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content text-sm"><FontAwesomeIcon icon={faSpotify} size="sm" /> Playlist Count</p>
-                    <p className="text-lg text-tremor-content-strong dark:text-dark-tremor-content-strong font-semibold">{artist.playlist_count}</p>
-                </Card>
-                <div className="mx-2"></div> {/* Add a spacer with horizontal margin */}
-                <Card className="mx-auto max-w-xs p-2">
-                    <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content text-sm"><FontAwesomeIcon icon={faSpotify} size="sm" /> Playlist Reach</p>
-                    <p className="text-lg text-tremor-content-strong dark:text-dark-tremor-content-strong font-semibold">{artist.total_followers.toLocaleString()}</p>
-                </Card>
-            </div>
-
-        <div className="flex items-center mb-2.5 mt-2.5">
-        <FollowersAnalytics data={artist.follower_history} artistName={artist.name} />
-        </div>
-        <div className="flex items-center mb-5 mt-2.5">
-        <Card className="mx-auto max-w-xs p-2">
-                    <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content text-sm"><FontAwesomeIcon icon={faSpotify} size="sm" /> Followers/Listeners</p>
-                    <p className="text-lg text-tremor-content-strong dark:text-dark-tremor-content-strong font-semibold">{(artist.follower_listener_ratio * 100).toFixed(2)}%</p>
-                </Card>
-                </div>
-        {loadingArtist === artist.name ? (
-            <div className="flex justify-center items-center mt-10">
-              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent" role="status">
-                <span className="sr-only">Loading...</span>
-              </div>
-              <TypeAnimation
-                sequence={[
-                  'Scanning the internet...', // Text to type
-                  2000,      // Wait 1 second
-                  '',        // Delete text
-                  2000,
-                  'Summarizing your info...', 
-                  2000,      // Wait 1 second before repeating
-                  '',        // Delete text
-                ]}
-                wrapper="div"
-                cursor={true}
-                repeat={Infinity}
-                style={{ fontSize: '0.75em', marginLeft: '10px' }}
-              />
-            </div>
-          ) : (
-            <>
-              {artist.description ? (
-              // Display artist description if it exists
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                {artist.description}
-              </p>
-            ) : (
-              // Show the "Generate AI Bio" button if no description
-              <>
-                {!generatedBio[artist.name] && (
-                  <button
-                    onClick={() => handleArtistClick(artist.name)}
-                    className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded"
-                  >
-                    Generate AI Bio ✨ <p className="text-xs text-gray-200">Contents may be inaccurate</p>
-                  </button>
-                )}
-                {generatedBio[artist.name] && (
-                  <TypeAnimation
-                  splitter={(str) => str.split(/(?= )/)} // 'Lorem ipsum dolor' -> ['Lorem', ' ipsum', ' dolor']
-                  sequence={[
-                    generatedBio[artist.name],
-                    3000,
-                  ]}
-                  speed={{ type: 'keyStrokeDelayInMs', value: 60 }}
-                  omitDeletionAnimation={true}
-                  style={{ fontSize: '0.75em', display: 'block', minHeight: '200px' }}
-                  repeat={0}
-                />
-                )}
-              </>
-            )}
-            </>
-          )}
-        <hr class="my-6 h-0.5 border-t-0 bg-neutral-100 opacity-100 dark:opacity-50" />
-        <div className="grid grid-cols-2 gap-4">
-          {artist.playlist_list.slice(0, 6).map((playlist, index) => (
-            <a key={index} href={playlist.url} target="_blank" rel="noopener noreferrer" className="playlist-item">
-              <div className="flex flex-col items-center hover:opacity-80 transition duration-300">
-                <img className="w-16 h-16 object-cover rounded shadow-lg" src={playlist.image} alt={playlist.name} />
-                <span className="text-xs text-center text-gray-500 dark:text-gray-400">{playlist.name}</span>
-              </div>
-            </a>
-          ))}
-        </div>
-      </div>
-    </div>
-    ))}
-  </Masonry>
-  </ResponsiveMasonry>
   </div>
 
   );
