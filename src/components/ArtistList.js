@@ -288,10 +288,9 @@ function ArtistList() {
   
       if (sortBy === 'follower_growth') {
         // Special handling for follower growth
-        const aFollowerGrowth = calculateAveragePercentageChange(a.follower_history);
-        const bFollowerGrowth = calculateAveragePercentageChange(b.follower_history);
-  
-        return sortFollowerGrowth === 'asc' ? aFollowerGrowth - bFollowerGrowth : bFollowerGrowth - aFollowerGrowth;
+        const aGrowth = calculateGrowth(a.follower_history, 7); // Assuming 30 days growth
+        const bGrowth = calculateGrowth(b.follower_history, 7); // Assuming 30 days growth
+        return sortFollowerGrowth === 'asc' ? aGrowth - bGrowth : bGrowth - aGrowth;
       }
   
       if (sortOrder === 'asc') {
@@ -336,6 +335,26 @@ function ArtistList() {
     return averagePercentageChange;
   };
 
+  const calculateGrowth = (data, periodInDays) => {
+    const today = moment();
+    const startDate = moment(today).subtract(periodInDays, 'days');
+    let startIndex = -1;
+    for (let i = 0; i < data.length; i++) {
+        const timestamp = moment(data[i].timestamp);
+        if (timestamp.isSameOrAfter(startDate)) {
+            startIndex = i;
+            break;
+        }
+    }
+    const endIndex = data.length - 1;
+    if (startIndex < 0 || endIndex < 0 || endIndex < startIndex) {
+        return 0;
+    }
+    const startFollowers = data[startIndex].followers;
+    const endFollowers = data[endIndex].followers;
+    return ((endFollowers - startFollowers) / startFollowers) * 100;
+  };
+
   const getSortingValue = (artist, sortBy) => {
     // Helper function to get the sorting value for the selected option
     switch (sortBy) {
@@ -348,7 +367,7 @@ function ArtistList() {
       case 'follower_listener_ratio':
         return artist.follower_listener_ratio;
       case 'follower_growth':
-        return calculateAveragePercentageChange(artist.follower_history);
+        return calculateGrowth(artist.follower_history, 7);
       // Handle other sorting options if needed
       default:
         return artist.playlist_count;
