@@ -227,6 +227,7 @@ function ArtistList() {
 
   const [artists, setArtists] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [sortBy, setSortBy] = useState('playlist_count'); // Default sorting by popularity
   const [sortOrder, setSortOrder] = useState('desc'); // Default sorting order
   const [sortFollowerGrowth, setSortFollowerGrowth] = useState('desc'); // Default sorting order for follower growth
@@ -242,6 +243,53 @@ function ArtistList() {
   const [showLabelFilter, setShowLabelFilter] = useState(false);
   const [showFollowersFilter, setShowFollowersFilter] = useState(false);
   const [sortingLoading, setSortingLoading] = useState(false);
+  const [visibleArtists, setVisibleArtists] = useState([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+
+  useEffect(() => {
+    const startIndex = 0;
+    const endIndex = page * 20;
+    const filteredArtists = artists.filter(artist => {
+      // Apply your existing filters here
+      return (
+        artist.playlist_count >= minPlaylistCount &&
+        artist.playlist_count <= maxPlaylistCount &&
+        artist.artist_followers >= minFollowers &&
+        artist.artist_followers <= maxFollowers &&
+        selectedGenres.every((genre) => artist.genres.includes(genre)) &&
+        (selectedLabel === 'all' ||
+              (selectedLabel === 'Unsigned' &&
+                ['DistroKid', 'CDBaby', 'TuneCore', 'Ditto Music', 'Self-released',''].includes(artist.label)) ||
+              (selectedLabel === 'Signed' && !['DistroKid', 'CDBaby', 'TuneCore', 'Self-released', ''].includes(artist.label)))
+         );
+    });
+
+    const sortedArtists = sortArtists(filteredArtists);
+
+    setVisibleArtists(sortedArtists.slice(startIndex, endIndex));
+    setHasMore(endIndex < sortedArtists.length);
+    setIsLoading(false);
+  }, [page, artists, minFollowers, maxFollowers, selectedLabel, selectedGenres, sortBy, sortOrder, sortFollowerGrowth]);
+
+
+  const handleScroll = () => {
+    const scrollHeight = document.documentElement.scrollHeight;
+    const scrollTop = document.documentElement.scrollTop;
+    const clientHeight = document.documentElement.clientHeight;
+
+    if (scrollTop + clientHeight >= scrollHeight && hasMore && !loading) {
+      setIsLoading(true);
+      setPage(page + 1);
+    }
+  };
+
+  useEffect(() => {
+    window.addEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [handleScroll]);
 
   useEffect(() => {
     // Sorting is done when sortBy or sortOrder changes
@@ -283,23 +331,32 @@ function ArtistList() {
 
   const sortArtists = (artists) => {
     return artists.sort((a, b) => {
-      const aValue = getSortingValue(a, sortBy);
-      const bValue = getSortingValue(b, sortBy);
-  
-      if (sortBy === 'follower_growth') {
-        // Special handling for follower growth
-        const aGrowth = calculateGrowth(a.follower_history, 7); // Assuming 30 days growth
-        const bGrowth = calculateGrowth(b.follower_history, 7); // Assuming 30 days growth
-        return sortFollowerGrowth === 'asc' ? aGrowth - bGrowth : bGrowth - aGrowth;
-      }
-  
-      if (sortOrder === 'asc') {
-        return aValue - bValue;
-      } else {
-        return bValue - aValue;
-      }
+        const aValue = getSortingValue(a, sortBy);
+        const bValue = getSortingValue(b, sortBy);
+        if (sortBy === 'follower_growth') {
+            // Special handling for follower growth
+            const aGrowth = calculateGrowth(a.follower_history, 7); // Assuming 30 days growth
+            const bGrowth = calculateGrowth(b.follower_history, 7); // Assuming 30 days growth
+            return sortFollowerGrowth === 'asc' ? aGrowth - bGrowth : bGrowth - aGrowth;
+        } else if (sortBy === 'monthly_follower_growth') {
+            // Calculate monthly follower growth
+            const aGrowth = calculateGrowth(a.follower_history, 30);
+            const bGrowth = calculateGrowth(b.follower_history, 30);
+            return sortFollowerGrowth === 'asc' ? aGrowth - bGrowth : bGrowth - aGrowth;
+        } else if (sortBy === 'two_month_follower_growth') {
+            // Calculate 2-month follower growth
+            const aGrowth = calculateGrowth(a.follower_history, 60);
+            const bGrowth = calculateGrowth(b.follower_history, 60);
+            return sortFollowerGrowth === 'asc' ? aGrowth - bGrowth : bGrowth - aGrowth;
+        } else {
+            if (sortOrder === 'asc') {
+                return aValue - bValue;
+            } else {
+                return bValue - aValue;
+            }
+        }
     });
-  };
+};
 
   const handleFollowerGrowthSortChange = () => {
     setSortFollowerGrowth((prevSortOrder) => (prevSortOrder === 'asc' ? 'desc' : 'asc'));
@@ -358,21 +415,22 @@ function ArtistList() {
   const getSortingValue = (artist, sortBy) => {
     // Helper function to get the sorting value for the selected option
     switch (sortBy) {
-      case 'popularity':
-        return artist.popularity;
-      case 'artist_followers':
-        return artist.artist_followers;
-      case 'total_followers':
-        return artist.total_followers;
-      case 'follower_listener_ratio':
-        return artist.follower_listener_ratio;
-      case 'follower_growth':
-        return calculateGrowth(artist.follower_history, 7);
-      // Handle other sorting options if needed
-      default:
-        return artist.playlist_count;
+        case 'popularity':
+            return artist.popularity;
+        case 'artist_followers':
+            return artist.artist_followers;
+        case 'total_followers':
+            return artist.total_followers;
+        case 'follower_growth':
+            return calculateGrowth(artist.follower_history, 7); // Handle other sorting options if needed
+        case 'monthly_follower_growth':
+            return calculateGrowth(artist.follower_history, 30);
+        case 'two_month_follower_growth':
+            return calculateGrowth(artist.follower_history, 60);
+        default:
+            return artist.playlist_count;
     }
-  };
+};
 
 
   useEffect(() => {
@@ -494,19 +552,16 @@ function ArtistList() {
   <div className="mb-2 md:flex items-center space-x-4">
   <label className="text-gray-700 font-medium">Sort by:</label>
   <div className="relative">
-        <select
-        value={sortBy}
-        onChange={handleSortByChange}
-        className="bg-gray-200 hover:bg-blue-500 hover:text-white text-gray-800 font-semibold py-2 px-4 rounded-md pr-8 appearance-none"
-        disabled={sortingLoading} // Disable select while sorting is in progress
-      >
-      <option value="playlist_count">Playlist Count</option>
-      <option value="follower_growth">✦ Avg Daily Follower Growth</option>
-      <option value="popularity">Popularity</option>
-      <option value="artist_followers">Followers</option>
-      <option value="total_followers">Playlist Reach</option>
-      <option value="follower_listener_ratio">Followers/Listeners</option>
-    </select>
+  <select value={sortBy} onChange={handleSortByChange} className="bg-gray-200 hover:bg-blue-500 hover:text-white text-gray-800 font-semibold py-2 px-4 rounded-md pr-8 appearance-none" disabled={sortingLoading}>
+    <option value="playlist_count">Playlist Count</option>
+    <option value="follower_growth">Weekly Follower Growth</option>
+    <option value="monthly_follower_growth">Monthly Follower Growth</option>
+    <option value="two_month_follower_growth">2-Month Follower Growth</option>
+    <option value="popularity">Popularity</option>
+    <option value="artist_followers">Followers</option>
+    <option value="total_followers">Playlist Reach</option>
+    <option value="follower_listener_ratio">Followers/Listeners</option>
+</select>
     <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
     </div>
   </div>
@@ -687,18 +742,7 @@ function ArtistList() {
     columnsCountBreakPoints={{350: 1, 750: 2, 900: 3, 1200: 4}}
 >
 <Masonry className="my-masonry">
-{sortArtists(artists.filter(
-(artist) =>
-artist.playlist_count >= minPlaylistCount &&
-artist.playlist_count <= maxPlaylistCount &&
-artist.artist_followers >= minFollowers &&
-artist.artist_followers <= maxFollowers &&
-selectedGenres.every((genre) => artist.genres.includes(genre)) &&
-(selectedLabel === 'all' ||
-      (selectedLabel === 'Unsigned' &&
-        ['DistroKid', 'CDBaby', 'TuneCore', 'Ditto Music', 'Self-released',''].includes(artist.label)) ||
-      (selectedLabel === 'Signed' && !['DistroKid', 'CDBaby', 'TuneCore', 'Self-released', ''].includes(artist.label)))
-)).map(artist => (
+{visibleArtists.map(artist => (
 <div
 className="block max-w-xs bg-white rounded-lg border border-gray-200 shadow-md dark:bg-gray-800 dark:border-gray-700 m-4 hover:shadow-lg transition-shadow duration-300 ease-in-out"
 >
@@ -845,7 +889,13 @@ className="block max-w-xs bg-white rounded-lg border border-gray-200 shadow-md d
 </Masonry>
 </ResponsiveMasonry>
    )}
-
+  {isLoading && (
+      <div className="flex justify-center my-4">
+        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent" role="status">
+          <span className="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">Loading...</span>
+        </div>
+      </div>
+    )}
     
 
   </div>
