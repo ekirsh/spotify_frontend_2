@@ -69,7 +69,7 @@ const PopupModal = () => {
 
 
 
-const FollowersAnalytics = ({ data, artistName }) => {
+const FollowersAnalytics = ({ data, artistName, growth }) => {
   const calculatePercentageChange = (startFollowers, endFollowers) => {
     return ((endFollowers - startFollowers) / startFollowers) * 100;
   };
@@ -102,9 +102,9 @@ const FollowersAnalytics = ({ data, artistName }) => {
     return calculateGrowth(startIndex, endIndex);
   };
 
-  const weeklyGrowth = calculateGrowthOverPeriod(7);
-  const thirtyDaysGrowth = calculateGrowthOverPeriod(30);
-  const sixtyDaysGrowth = calculateGrowthOverPeriod(60);
+  const weeklyGrowth = growth.week_change;
+  const thirtyDaysGrowth = growth.month_change;
+  const sixtyDaysGrowth = growth.two_months_change;
 
   const [showChart, setShowChart] = useState(false);
 
@@ -228,10 +228,10 @@ function ArtistList() {
   const [artists, setArtists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
-  const [sortBy, setSortBy] = useState('playlist_count'); // Default sorting by popularity
+  const [sortBy, setSortBy] = useState('popularity'); // Default sorting by popularity
   const [sortOrder, setSortOrder] = useState('desc'); // Default sorting order
   const [sortFollowerGrowth, setSortFollowerGrowth] = useState('desc'); // Default sorting order for follower growth
-  const [minFollowers, setMinFollowers] = useState(350);
+  const [minFollowers, setMinFollowers] = useState(1000);
   const [maxFollowers, setMaxFollowers] = useState(50000);
   const [minPlaylistCount, setMinPlaylistCount] = useState(0);
   const [maxPlaylistCount, setMaxPlaylistCount] = useState(25);
@@ -253,8 +253,6 @@ function ArtistList() {
     const filteredArtists = artists.filter(artist => {
       // Apply your existing filters here
       return (
-        artist.playlist_count >= minPlaylistCount &&
-        artist.playlist_count <= maxPlaylistCount &&
         artist.artist_followers >= minFollowers &&
         artist.artist_followers <= maxFollowers &&
         selectedGenres.every((genre) => artist.genres.includes(genre)) &&
@@ -333,27 +331,11 @@ function ArtistList() {
     return artists.sort((a, b) => {
         const aValue = getSortingValue(a, sortBy);
         const bValue = getSortingValue(b, sortBy);
-        if (sortBy === 'follower_growth') {
-            // Special handling for follower growth
-            const aGrowth = calculateGrowth(a.follower_history, 7); // Assuming 30 days growth
-            const bGrowth = calculateGrowth(b.follower_history, 7); // Assuming 30 days growth
-            return sortFollowerGrowth === 'asc' ? aGrowth - bGrowth : bGrowth - aGrowth;
-        } else if (sortBy === 'monthly_follower_growth') {
-            // Calculate monthly follower growth
-            const aGrowth = calculateGrowth(a.follower_history, 30);
-            const bGrowth = calculateGrowth(b.follower_history, 30);
-            return sortFollowerGrowth === 'asc' ? aGrowth - bGrowth : bGrowth - aGrowth;
-        } else if (sortBy === 'two_month_follower_growth') {
-            // Calculate 2-month follower growth
-            const aGrowth = calculateGrowth(a.follower_history, 60);
-            const bGrowth = calculateGrowth(b.follower_history, 60);
-            return sortFollowerGrowth === 'asc' ? aGrowth - bGrowth : bGrowth - aGrowth;
+
+        if (sortOrder === 'asc') {
+            return aValue - bValue;
         } else {
-            if (sortOrder === 'asc') {
-                return aValue - bValue;
-            } else {
-                return bValue - aValue;
-            }
+            return bValue - aValue;
         }
     });
 };
@@ -422,13 +404,13 @@ function ArtistList() {
         case 'total_followers':
             return artist.total_followers;
         case 'follower_growth':
-            return calculateGrowth(artist.follower_history, 7); // Handle other sorting options if needed
+            return artist.follower_growth.week_change; 
         case 'monthly_follower_growth':
-            return calculateGrowth(artist.follower_history, 30);
+            return artist.follower_growth.month_change; 
         case 'two_month_follower_growth':
-            return calculateGrowth(artist.follower_history, 60);
+            return artist.follower_growth.two_months_change; 
         default:
-            return artist.playlist_count;
+            return artist.popularity; 
     }
 };
 
@@ -553,11 +535,10 @@ function ArtistList() {
   <label className="text-gray-700 font-medium">Sort by:</label>
   <div className="relative">
   <select value={sortBy} onChange={handleSortByChange} className="bg-gray-200 hover:bg-blue-500 hover:text-white text-gray-800 font-semibold py-2 px-4 rounded-md pr-8 appearance-none" disabled={sortingLoading}>
-    <option value="playlist_count">Playlist Count</option>
+  <option value="popularity">Popularity</option>
     <option value="follower_growth">Weekly Follower Growth</option>
     <option value="monthly_follower_growth">Monthly Follower Growth</option>
     <option value="two_month_follower_growth">2-Month Follower Growth</option>
-    <option value="popularity">Popularity</option>
     <option value="artist_followers">Followers</option>
     <option value="total_followers">Playlist Reach</option>
     <option value="follower_listener_ratio">Followers/Listeners</option>
@@ -771,18 +752,6 @@ className="block max-w-xs bg-white rounded-lg border border-gray-200 shadow-md d
 }
 <h5 className="text-xs text-gray-500 mt-1 dark:text-gray-400">{artist.label}</h5>
 </div>
-<Card className="mx-auto max-w-sm mb-3">
-<p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content flex items-center justify-between">
-<span>Popularity</span>
-<span>{artist.popularity}%</span>
-</p>
-<CategoryBar
-  values={[20, 30, 20, 30]}
-  colors={['red', 'orange', 'yellow', 'green']}
-  markerValue={artist.popularity}
-  className="mt-3"
-/>
-</Card>
 <div className="flex items-center mt-2.5">
     <Card className="mx-auto max-w-xs p-2">
         <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content text-sm"><FontAwesomeIcon icon={faSpotify} size="sm" /> Listeners</p>
@@ -795,20 +764,9 @@ className="block max-w-xs bg-white rounded-lg border border-gray-200 shadow-md d
     </Card>
 </div>
 
-<div className="flex items-center mt-2.5">
-    <Card className="mx-auto max-w-xs p-2">
-        <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content text-sm"><FontAwesomeIcon icon={faSpotify} size="sm" /> Playlist Count</p>
-        <p className="text-lg text-tremor-content-strong dark:text-dark-tremor-content-strong font-semibold">{artist.playlist_count}</p>
-    </Card>
-    <div className="mx-2"></div> {/* Add a spacer with horizontal margin */}
-    <Card className="mx-auto max-w-xs p-2">
-        <p className="text-tremor-default text-tremor-content dark:text-dark-tremor-content text-sm"><FontAwesomeIcon icon={faSpotify} size="sm" /> Playlist Reach</p>
-        <p className="text-lg text-tremor-content-strong dark:text-dark-tremor-content-strong font-semibold">{artist.total_followers.toLocaleString()}</p>
-    </Card>
-</div>
 
 <div className="flex items-center mb-2.5 mt-2.5">
-<FollowersAnalytics data={artist.follower_history} artistName={artist.name} />
+<FollowersAnalytics data={artist.follower_history} artistName={artist.name} growth={artist.follower_growth} />
 </div>
 <div className="flex items-center mb-5 mt-2.5">
 <Card className="mx-auto max-w-xs p-2">
@@ -872,17 +830,6 @@ className="block max-w-xs bg-white rounded-lg border border-gray-200 shadow-md d
 )}
 </>
 )}
-<hr class="my-6 h-0.5 border-t-0 bg-neutral-100 opacity-100 dark:opacity-50" />
-<div className="grid grid-cols-2 gap-4">
-{artist.playlist_list.slice(0, 6).map((playlist, index) => (
-<a key={index} href={playlist.url} target="_blank" rel="noopener noreferrer" className="playlist-item">
-  <div className="flex flex-col items-center hover:opacity-80 transition duration-300">
-    <img className="w-16 h-16 object-cover rounded shadow-lg" src={playlist.image} alt={playlist.name} />
-    <span className="text-xs text-center text-gray-500 dark:text-gray-400">{playlist.name}</span>
-  </div>
-</a>
-))}
-</div>
 </div>
 </div>
 ))}
