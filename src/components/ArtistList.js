@@ -409,6 +409,8 @@ function ArtistList() {
             return artist.follower_growth.month_change; 
         case 'two_month_follower_growth':
             return artist.follower_growth.two_months_change; 
+        case 'date_added':
+            return new Date(artist.follower_history[0].timestamp).getTime();
         default:
             return artist.popularity; 
     }
@@ -539,9 +541,8 @@ function ArtistList() {
     <option value="follower_growth">Weekly Follower Growth</option>
     <option value="monthly_follower_growth">Monthly Follower Growth</option>
     <option value="two_month_follower_growth">2-Month Follower Growth</option>
+    <option value="date_added">Date Added</option>
     <option value="artist_followers">Followers</option>
-    <option value="total_followers">Playlist Reach</option>
-    <option value="follower_listener_ratio">Followers/Listeners</option>
 </select>
     <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
     </div>
